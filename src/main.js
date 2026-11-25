@@ -20,9 +20,9 @@ function initLiveAgentBridge(doc, renderer, tools) {
     if (pillText) pillText.textContent = label;
   };
 
-  // Skip bridge if opened as standalone file://
-  if (location.protocol === 'file:') {
-    setConnected(false, 'Local File');
+  const isLocalBridge = location.protocol.startsWith('http') && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  if (!isLocalBridge) {
+    setConnected(false, 'Browser Only');
     return;
   }
 
@@ -127,7 +127,8 @@ async function boot() {
   let localTs = 0;
   try { localTs = parseInt(localStorage.getItem('archsketch_autosave_ts') || '0', 10) || 0; } catch {}
 
-  if (location.protocol !== 'file:') {
+  const isLocalBridge = location.protocol.startsWith('http') && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  if (isLocalBridge) {
     try {
       const resp = await fetch('/api/state');
       if (resp.ok) {
