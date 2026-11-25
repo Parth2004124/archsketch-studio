@@ -9,20 +9,35 @@ const { CADDocument } = kernel;
 const { loadTemplate } = arch;
 const { add3, scale3 } = math;
 
-function initLiveAgentBridge(doc, renderer, tools) {
+async function initLiveAgentBridge(doc, renderer, tools) {
   const pill = document.getElementById('agent-link-pill');
   const pillText = pill?.querySelector('.agent-text');
   const statusHint = document.getElementById('status-hint');
 
-  const setConnected = (connected, label) => {
+  const setConnected = (connected, label, show = true) => {
     if (!pill) return;
+    pill.style.display = show ? 'inline-flex' : 'none';
     pill.classList.toggle('connected', connected);
     if (pillText) pillText.textContent = label;
   };
 
   const isLocalBridge = location.protocol.startsWith('http') && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
   if (!isLocalBridge) {
-    setConnected(false, 'Browser Only');
+    setConnected(false, 'Browser Only', false);
+    return;
+  }
+
+  // Probe whether server.mjs bridge is active before opening SSE/POST sync
+  let bridgeActive = false;
+  try {
+    const st = await fetch('/api/status');
+    if (st.ok) {
+      const info = await st.json();
+      bridgeActive = Boolean(info && info.ok);
+    }
+  } catch {}
+  if (!bridgeActive) {
+    setConnected(false, 'Browser Only', false);
     return;
   }
 

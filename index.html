@@ -14,7 +14,7 @@
         <div class="brand-mark">AS</div>
         <span class="brand-title">ArchSketch Studio</span>
         <input id="project-name-input" class="proj-input" value="Courtyard Pavilion Residence" title="Project Name" />
-        <span id="agent-link-pill" class="agent-pill" title="Live connection to AI Architect"><span class="agent-dot"></span><span class="agent-text">Connecting…</span></span>
+        <span id="agent-link-pill" class="agent-pill" style="display:none;" title="Live connection to AI Architect"><span class="agent-dot"></span><span class="agent-text">Live Sync</span></span>
       </div>
 
       <div class="bar-cluster">
@@ -54,6 +54,7 @@
         <div class="bar-sep"></div>
         <button id="btn-open-stair-modal" class="top-btn primary">+ Stair</button>
         <button id="btn-open-roof-modal" class="top-btn primary">+ Roof</button>
+        <button id="btn-toggle-ai" class="top-btn active" title="Toggle Inbuilt AI Architect (/)">AI Architect</button>
         <button id="btn-open-help" class="top-btn" title="Keyboard Shortcuts">?</button>
       </div>
     </header>
@@ -179,6 +180,45 @@
         <canvas id="gl-canvas"></canvas>
         <canvas id="hud-canvas" tabindex="0"></canvas>
         <div id="context-breadcrumb"><span class="crumb active">Model Root</span></div>
+
+        <!-- INBUILT AI ARCHITECT ASSISTANT -->
+        <section id="ai-assistant-panel" class="ai-panel">
+          <div class="ai-head">
+            <div class="ai-title-wrap">
+              <span class="ai-badge">AI</span>
+              <strong>AI Architect</strong>
+              <span id="ai-mode-label" class="ai-mode-tag">Built-in</span>
+            </div>
+            <div class="ai-head-actions">
+              <button id="btn-ai-settings" class="mini-btn" title="Optional Gemini / OpenAI Key">⚙</button>
+              <button id="btn-ai-collapse" class="mini-btn" title="Minimize">_</button>
+            </div>
+          </div>
+          <div id="ai-settings-drawer" class="ai-settings" style="display:none;">
+            <div class="ai-set-row">
+              <span>Engine</span>
+              <select id="ai-provider" class="tray-select">
+                <option value="builtin">Built-in (No Key Needed)</option>
+                <option value="gemini">Google Gemini (BYOK)</option>
+                <option value="openai">OpenAI (BYOK)</option>
+              </select>
+            </div>
+            <div class="ai-set-row">
+              <span>API Key</span>
+              <input id="ai-api-key" type="password" class="tray-input" placeholder="Optional (saved locally)" />
+            </div>
+            <div class="ai-set-row">
+              <span></span>
+              <button id="btn-ai-save-cfg" class="mini-btn active">Save Config</button>
+            </div>
+          </div>
+          <div id="ai-messages" class="ai-messages"></div>
+          <div id="ai-chips" class="ai-chips"></div>
+          <form id="ai-form" class="ai-input-row">
+            <input id="ai-input" type="text" placeholder="Tell AI what to build or change…" autocomplete="off" />
+            <button id="ai-send-btn" type="submit" class="top-btn primary">Build</button>
+          </form>
+        </section>
       </main>
 
       <!-- RIGHT INSPECTOR TRAY -->

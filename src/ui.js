@@ -21,6 +21,7 @@ import {
 } from './exporters.js';
 import { nextId } from './kernel.js';
 import { TOOL_HINTS } from './tools.js';
+import { InbuiltAIAssistant, AI_QUICK_PROMPTS } from './ai_assistant.js';
 
 export function initStudioUI(doc, renderer, tools) {
   const vcbInput = document.getElementById('vcb-input');
@@ -785,6 +786,15 @@ export function initStudioUI(doc, renderer, tools) {
       renderer.zoomExtents();
       return;
     }
+    if (e.key === '/') {
+      e.preventDefault();
+      const aiPanel = document.getElementById('ai-assistant-panel');
+      aiPanel.classList.remove('hidden', 'minimized');
+      document.getElementById('btn-toggle-ai').classList.add('active');
+      document.getElementById('ai-input').focus();
+      return;
+    }
+
     if (map[k]) {
       e.preventDefault();
       tools.setTool(map[k]);
@@ -798,6 +808,122 @@ export function initStudioUI(doc, renderer, tools) {
     }
     tools.walkKeys.delete(e.key.toLowerCase());
   });
+
+  // ---- Inbuilt AI Architect Drawer ----
+  function initAIAssistant() {
+    const ai = new InbuiltAIAssistant(doc, renderer, tools);
+    const panel = document.getElementById('ai-assistant-panel');
+    const toggleBtn = document.getElementById('btn-toggle-ai');
+    const collapseBtn = document.getElementById('btn-ai-collapse');
+    const settingsBtn = document.getElementById('btn-ai-settings');
+    const settingsDrawer = document.getElementById('ai-settings-drawer');
+    const providerSel = document.getElementById('ai-provider');
+    const apiKeyInp = document.getElementById('ai-api-key');
+    const saveCfgBtn = document.getElementById('btn-ai-save-cfg');
+    const modeLabel = document.getElementById('ai-mode-label');
+    const msgList = document.getElementById('ai-messages');
+    const chipsEl = document.getElementById('ai-chips');
+    const form = document.getElementById('ai-form');
+    const input = document.getElementById('ai-input');
+
+    const syncModeBadge = () => {
+      providerSel.value = ai.config.provider || 'builtin';
+      apiKeyInp.value = ai.config.apiKey || '';
+      const isBYOK = ai.config.provider !== 'builtin' && ai.config.apiKey;
+      modeLabel.textContent = isBYOK ? `${ai.config.provider.toUpperCase()} BYOK` : 'Built-in';
+    };
+    syncModeBadge();
+
+    const addBubble = (role, text, undoable = false) => {
+      const div = document.createElement('div');
+      div.className = `ai-msg ${role}`;
+      // Simple bold markdown support (**text**)
+      const safe = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      div.innerHTML = safe;
+      if (role === 'bot' && undoable) {
+        const act = document.createElement('div');
+        act.className = 'ai-msg-actions';
+        const uBtn = document.createElement('button');
+        uBtn.className = 'mini-btn';
+        uBtn.textContent = 'Undo Action';
+        uBtn.addEventListener('click', () => {
+          doc.undo();
+          uBtn.disabled = true;
+          uBtn.textContent = 'Undone';
+        });
+        act.appendChild(uBtn);
+        div.appendChild(act);
+      }
+      msgList.appendChild(div);
+      msgList.scrollTop = msgList.scrollHeight;
+    };
+
+    addBubble(
+      'bot',
+      'Hi! Tell me what to build or change in plain English — e.g. **"Add a 6x4m brick room with gable roof"**, **"Add a pergola"**, **"Floor plan cut at 1.4m"**, or **"Walk inside"**.'
+    );
+
+    AI_QUICK_PROMPTS.forEach((p) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'ai-chip';
+      chip.textContent = p;
+      chip.addEventListener('click', () => submitPrompt(p));
+      chipsEl.appendChild(chip);
+    });
+
+    async function submitPrompt(prompt) {
+      const clean = prompt.trim();
+      if (!clean) return;
+      addBubble('user', clean);
+      input.value = '';
+      const sendBtn = document.getElementById('ai-send-btn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = '…';
+      try {
+        const res = await ai.runPrompt(clean);
+        addBubble('bot', res.reply, res.undoable);
+      } catch (err) {
+        addBubble('bot', `Error: ${err.message}`);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Build';
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitPrompt(input.value);
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      panel.classList.toggle('hidden');
+      toggleBtn.classList.toggle('active', !panel.classList.contains('hidden'));
+    });
+
+    collapseBtn.addEventListener('click', () => {
+      panel.classList.toggle('minimized');
+      collapseBtn.textContent = panel.classList.contains('minimized') ? '+' : '_';
+    });
+
+    settingsBtn.addEventListener('click', () => {
+      settingsDrawer.style.display = settingsDrawer.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    saveCfgBtn.addEventListener('click', () => {
+      ai.saveConfig({
+        provider: providerSel.value,
+        apiKey: apiKeyInp.value.trim(),
+      });
+      syncModeBadge();
+      settingsDrawer.style.display = 'none';
+      addBubble('bot', `AI engine set to **${modeLabel.textContent}**.`);
+    });
+  }
 
   // Subscribe to document updates
   doc.onChange(() => {
@@ -815,6 +941,7 @@ export function initStudioUI(doc, renderer, tools) {
   // Initial render
   initStylesAndSun();
   initComponentLibrary();
+  initAIAssistant();
   renderMaterialsPanel();
   renderToolOptionsStrip();
   renderEntityPanel();
