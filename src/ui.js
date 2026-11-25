@@ -81,13 +81,22 @@ export function initStudioUI(doc, renderer, tools) {
   document.getElementById('btn-walk').addEventListener('click', (e) => {
     renderer.camera.walkMode = !renderer.camera.walkMode;
     if (renderer.camera.walkMode) {
+      renderer.camera.ortho = false;
+      document.getElementById('btn-ortho').classList.remove('active');
       const eye = renderer.getEyePosition();
-      renderer.camera.eyePos = { x: eye.x, y: eye.y, z: 1.65 };
-      const dx = renderer.camera.target.x - eye.x;
-      const dy = renderer.camera.target.y - eye.y;
+      const t = renderer.camera.target;
+      const dx = t.x - eye.x;
+      const dy = t.y - eye.y;
+      const dist2D = Math.hypot(dx, dy) || 1;
+      const startDist = Math.min(dist2D, 4.5);
+      renderer.camera.eyePos = {
+        x: t.x - (dx / dist2D) * startDist,
+        y: t.y - (dy / dist2D) * startDist,
+        z: 1.75,
+      };
       renderer.camera.yaw = Math.atan2(dy, dx);
-      renderer.camera.pitch = 0;
-      statusHint.textContent = 'Walk Mode (1.65m Eye Level): Drag to look around, WASD to walk, Scroll to move forward/back.';
+      renderer.camera.pitch = -0.05;
+      statusHint.textContent = 'Walk Mode (1.75m Eye Level): Use WASD or Arrow Keys to walk, Drag to look around, Scroll to step, Esc or Walk to exit.';
     } else {
       statusHint.textContent = TOOL_HINTS[tools.activeTool];
     }
@@ -651,11 +660,18 @@ export function initStudioUI(doc, renderer, tools) {
     const tag = document.activeElement?.tagName;
     const isInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
 
-    // Walk mode WASD
+    // Walk mode WASD + Arrow keys + Esc to exit
     if (renderer.camera.walkMode && !isInput) {
       const k = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd'].includes(k)) {
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
+        e.preventDefault();
         tools.walkKeys.add(k);
+        return;
+      }
+      if (e.key === 'Escape') {
+        renderer.camera.walkMode = false;
+        document.getElementById('btn-walk').classList.remove('active');
+        statusHint.textContent = TOOL_HINTS[tools.activeTool];
         return;
       }
     }

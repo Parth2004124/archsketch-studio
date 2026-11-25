@@ -185,10 +185,10 @@ async function boot() {
       const speed = 5.5 * dt;
       const fwd = { x: Math.cos(renderer.camera.yaw), y: Math.sin(renderer.camera.yaw), z: 0 };
       const right = { x: Math.sin(renderer.camera.yaw), y: -Math.cos(renderer.camera.yaw), z: 0 };
-      if (tools.walkKeys.has('w')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(fwd, speed));
-      if (tools.walkKeys.has('s')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(fwd, -speed));
-      if (tools.walkKeys.has('d')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(right, speed));
-      if (tools.walkKeys.has('a')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(right, -speed));
+      if (tools.walkKeys.has('w') || tools.walkKeys.has('arrowup')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(fwd, speed));
+      if (tools.walkKeys.has('s') || tools.walkKeys.has('arrowdown')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(fwd, -speed));
+      if (tools.walkKeys.has('d') || tools.walkKeys.has('arrowright')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(right, speed));
+      if (tools.walkKeys.has('a') || tools.walkKeys.has('arrowleft')) renderer.camera.eyePos = add3(renderer.camera.eyePos, scale3(right, -speed));
     }
 
     renderer.render();

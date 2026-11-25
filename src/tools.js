@@ -473,6 +473,10 @@ export class ToolManager {
       }
 
       if (e.button !== 0) return;
+      if (this.renderer.camera.walkMode) {
+        canvas.setPointerCapture(e.pointerId);
+        return;
+      }
       this.handlePrimaryDown(e);
     });
 
@@ -502,6 +506,10 @@ export class ToolManager {
     canvas.addEventListener('pointerup', (e) => {
       if (this.navButton) {
         this.navButton = null;
+        try { canvas.releasePointerCapture(e.pointerId); } catch {}
+        return;
+      }
+      if (this.renderer.camera.walkMode) {
         try { canvas.releasePointerCapture(e.pointerId); } catch {}
         return;
       }
